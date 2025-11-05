@@ -1,6 +1,6 @@
-# Ky Bug Reproduction - Issue #689
+# Ky Bug Reproduction Attempt - Issue #689
 
-This project reproduces a bug in ky where POST requests with JSON bodies hang indefinitely on specific Node.js versions.
+This project attempts to reproduce a bug in ky where POST requests with JSON bodies reportedly hang indefinitely on specific Node.js versions.
 
 ## Description
 
@@ -8,13 +8,23 @@ This project reproduces a bug in ky where POST requests with JSON bodies hang in
 
 This bug causes POST/PUT requests with JSON bodies to hang when `await` is used on specific Node.js versions (particularly v18 and v22). The issue is related to how the request body stream is handled.
 
-### Key Observations:
-- ✗ **Affected Node.js versions**: 18.x, 22.x
-- ✓ **Working Node.js versions**: 20.x, 24.x (and possibly others)
-- ✗ **Broken ky versions**: v1.8.0+ (introduced in PR #651)
-- ✓ **Working ky versions**: v1.7.5 and earlier
-- Affects POST/PUT requests with JSON bodies
-- GET requests are unaffected
+### Key Observations from Testing:
+
+Based on actual test results, the hanging issue reported in #689 **could not be reproduced** with this specific test case:
+
+- ✓ **All Node.js versions tested**: 18.x, 20.x, 22.x, 24.x all PASSED or FAILED (none hung)
+- ✓ **All ky versions tested**: 1.7.5, 1.8.0, 1.14.0 completed without hanging
+- Some versions showed FAILED (network/auth errors) but none exhibited the hanging behavior
+
+**Note**: The bug may be:
+- Specific to certain network conditions
+- Related to particular API endpoints
+- Dependent on response types or headers
+- Intermittent and difficult to reproduce consistently
+
+The original bug report indicates:
+- Affects POST/PUT requests with JSON bodies on Node 18.x and 22.x
+- Introduced in ky v1.8.0 (PR #651)
 - Requests work without `await` but hang with `await`
 
 ## Prerequisites
@@ -80,12 +90,19 @@ The `test-node-versions.sh` script:
 
 4. Displays a summary table showing which combinations hang
 
-**Expected results:**
-- Node 24.x + ky v1.8.0+: **PASSED** (works fine)
-- Node 20.x + ky v1.8.0+: **PASSED** (works fine)
-- Node 18.x + ky v1.8.0+: **HUNG** (demonstrates the bug)
-- Node 22.x + ky v1.8.0+: **HUNG** (demonstrates the bug)
-- Any Node + ky v1.7.5: **PASSED** (but not HUNG)
+**Expected vs. Actual results:**
+
+According to the bug report, we would expect:
+- Node 18.x + ky v1.8.0+: **HUNG**
+- Node 22.x + ky v1.8.0+: **HUNG**
+- Node 20.x + ky v1.8.0+: **PASSED**
+- Node 24.x + ky v1.8.0+: **PASSED**
+
+**Actual test results:**
+- ✓ All versions: **PASSED** or **FAILED** (with network/auth errors)
+- ✗ No versions exhibited the HUNG behavior
+
+This suggests the bug may require specific conditions to reproduce that aren't present in this test setup.
 
 ## Customization
 
@@ -129,26 +146,41 @@ The script should:
 - Either succeed with a response or fail with an error
 - Respect the 10-second timeout specified in the code
 
-## Bug Behavior
+## Bug Behavior (as reported in #689)
 
-On affected Node.js versions:
+On affected Node.js versions (18.x, 22.x), the bug report describes:
 - The script hangs indefinitely
 - No response or error is returned
 - The timeout is not respected
 - Process must be manually killed
 
+**However**, this test was unable to reproduce the hanging behavior. All tests completed (either successfully or with errors) within the timeout period.
+
 ## Interpreting Results
 
 After running `./test-node-versions.sh`, you'll see a summary table like:
 
+**Example output:**
 ```
 Node.js         | ky 1.7.5   | ky 1.8.0   | ky 1.14.0
-----------------|------------|------------|------------
+--------------- | ---------- | ---------- | ----------
 v24.0.0         | PASSED     | PASSED     | PASSED
 v20.18.0        | PASSED     | PASSED     | PASSED
-v18.0.0         | PASSED     | HUNG       | HUNG
-v22.0.0         | PASSED     | HUNG       | HUNG
+v20.10.0        | PASSED     | PASSED     | FAILED
+v20.0.0         | PASSED     | PASSED     | FAILED
+v18.20.0        | PASSED     | PASSED     | FAILED
+v18.19.0        | PASSED     | PASSED     | FAILED
+v18.12.0        | PASSED     | PASSED     | PASSED
+v18.0.0         | PASSED     | PASSED     | PASSED
+v22.11.0        | PASSED     | PASSED     | PASSED
+v22.5.0         | PASSED     | PASSED     | PASSED
+v22.0.0         | PASSED     | PASSED     | PASSED
 ```
+
+**Analysis of results:**
+- No hanging detected on any Node.js version
+- FAILED results are due to network/authentication errors (expected - not the bug)
+- The hanging bug reported in #689 could not be reproduced with this test case
 
 Legend:
 - ✓ **Green PASSED**: Combination works correctly
@@ -208,10 +240,14 @@ chmod +x test-node-versions.sh
 
 ## Contributing
 
-If you find this bug affects additional Node.js or ky versions, please:
-1. Update the `NODE_VERSIONS` and/or `KY_VERSIONS` arrays
-2. Run the test
-3. Document your findings in the GitHub issue
+This reproduction attempt was unable to trigger the hanging behavior. If you can reproduce the bug:
+
+1. Identify what specific conditions trigger the hang (network setup, API endpoint, etc.)
+2. Update `index.js` to match those conditions
+3. Update the `NODE_VERSIONS` and/or `KY_VERSIONS` variables if needed
+4. Run the test and document your findings in the GitHub issue
+
+Your contribution could help identify the root cause!
 
 ## Related Issues
 
