@@ -169,7 +169,7 @@ echo ""
 # Print separator
 printf "%-15s" "---------------"
 for ky_version in $KY_VERSIONS; do
-    printf "-+-%-10s" "----------"
+    printf " | %-10s" "----------"
 done
 echo ""
 
