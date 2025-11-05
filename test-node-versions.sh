@@ -17,7 +17,8 @@ TIMEOUT=30
 
 # Node.js versions to test (bug is specific to Node 18 and 22)
 # Start with known good versions (24, 20) then test problematic ones (18, 22)
-NODE_VERSIONS="24.0.0 20.18.0 20.10.0 20.0.0 18.20.0 18.19.0 18.12.0 18.0.0 22.11.0 22.5.0 22.0.0"
+# v20.9.0 added per user's client issue report
+NODE_VERSIONS="24.0.0 20.18.0 20.10.0 20.9.0 20.0.0 18.20.0 18.19.0 18.12.0 18.0.0 22.11.0 22.5.0 22.0.0"
 
 # Ky versions to test
 KY_VERSIONS="1.7.5 1.8.0 1.14.0"
@@ -143,8 +144,8 @@ for node_version in $NODE_VERSIONS; do
             else
                 # Script failed with an error
                 printf "${RED}    ✗ FAILED - Script exited with code ${EXIT_CODE}${NC}\n"
-                echo "    Last 3 lines of output:"
-                tail -3 /tmp/node-test-output.log | sed 's/^/      /'
+                echo "    Full output:"
+                cat /tmp/node-test-output.log | sed 's/^/      /'
                 echo "${node_version}|${ky_version}|FAILED" >> "$RESULTS_FILE"
             fi
         fi

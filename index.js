@@ -30,7 +30,11 @@ try {
   console.log('=== CATCH BLOCK REACHED ===')
   console.log('Error type:', error.constructor.name)
   console.log('Error message:', error.message)
-  console.log('=== EXITING WITH CODE 0 (Success - error handled) ===')
+  console.log('Error status code:', error.response?.status)
+  console.log('Process exit code before exit():', process.exitCode)
+  console.log('=== CALLING process.exit(0) ===')
+  process.exitCode = 0
+  console.log('Process exit code after setting to 0:', process.exitCode)
   process.exit(0)
 }
 
