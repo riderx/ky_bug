@@ -1,6 +1,8 @@
 
 import ky from 'ky'
 
+console.log('=== SCRIPT START - Node:', process.version, '===')
+
 const payload = {
   event: 'test_event',
   properties: {
@@ -8,6 +10,8 @@ const payload = {
     key2: 'value2',
   },
 }
+
+console.log('=== BEFORE REQUEST ===')
 
 try {
   const response = await ky.post(`https://api.capgo.app/private/events`, {
@@ -19,11 +23,16 @@ try {
     retry: 3,
   }).json()
 
-  console.log('✓ Request completed successfully')
+  console.log('=== SUCCESS - Request completed ===')
   console.log('Response:', response)
+  process.exit(0)
 } catch (error) {
-  // Errors are acceptable - we're only testing for hangs
-  console.log('✓ Request completed with error (this is OK)')
-  console.log('Error:', error.message)
-  process.exit(0) // Exit successfully - errors are not the bug we're testing
+  console.log('=== CATCH BLOCK REACHED ===')
+  console.log('Error type:', error.constructor.name)
+  console.log('Error message:', error.message)
+  console.log('=== EXITING WITH CODE 0 (Success - error handled) ===')
+  process.exit(0)
 }
+
+console.log('=== AFTER TRY/CATCH - THIS SHOULD NEVER PRINT ===')
+process.exit(1)
