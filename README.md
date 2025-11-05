@@ -10,7 +10,7 @@ This bug causes POST/PUT requests with JSON bodies to hang when `await` is used 
 
 ### Key Observations:
 - ✗ **Affected Node.js versions**: 18.x, 22.x
-- ✓ **Working Node.js versions**: 20.x (and possibly others)
+- ✓ **Working Node.js versions**: 20.x, 24.x (and possibly others)
 - ✗ **Broken ky versions**: v1.8.0+ (introduced in PR #651)
 - ✓ **Working ky versions**: v1.7.5 and earlier
 - Affects POST/PUT requests with JSON bodies
@@ -19,6 +19,10 @@ This bug causes POST/PUT requests with JSON bodies to hang when `await` is used 
 
 ## Prerequisites
 
+- **timeout command** (required to detect hanging processes):
+  - macOS: `brew install coreutils` (provides `gtimeout`)
+  - Linux: Usually pre-installed (part of coreutils package)
+  - The script will automatically detect `timeout` or `gtimeout`
 - **Node.js version manager** (required to test across multiple Node.js versions):
   - **nvm** (recommended): https://github.com/nvm-sh/nvm
     - Install: `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash`
@@ -77,10 +81,11 @@ The `test-node-versions.sh` script:
 4. Displays a summary table showing which combinations hang
 
 **Expected results:**
-- Node 18.x + ky v1.8.0+: **HUNG** (demonstrates the bug)
+- Node 24.x + ky v1.8.0+: **PASSED** (works fine)
 - Node 20.x + ky v1.8.0+: **PASSED** (works fine)
+- Node 18.x + ky v1.8.0+: **HUNG** (demonstrates the bug)
 - Node 22.x + ky v1.8.0+: **HUNG** (demonstrates the bug)
-- Any Node + ky v1.7.5: **PASSED** or **FAILED** (but not HUNG)
+- Any Node + ky v1.7.5: **PASSED** (but not HUNG)
 
 ## Customization
 
@@ -94,28 +99,18 @@ TIMEOUT=30  # Change to desired timeout in seconds
 
 ### Test Different Node.js Versions
 
-Edit the `NODE_VERSIONS` array in `test-node-versions.sh`:
+Edit the `NODE_VERSIONS` variable in `test-node-versions.sh`:
 
 ```bash
-NODE_VERSIONS=(
-  "18.0.0"
-  "20.0.0"
-  "22.0.0"
-  # Add more versions here
-)
+NODE_VERSIONS="24.0.0 20.0.0 18.0.0 22.0.0"
 ```
 
 ### Test Different Ky Versions
 
-Edit the `KY_VERSIONS` array in `test-node-versions.sh`:
+Edit the `KY_VERSIONS` variable in `test-node-versions.sh`:
 
 ```bash
-KY_VERSIONS=(
-  "1.7.5"
-  "1.8.0"
-  "1.14.0"
-  # Add more versions here
-)
+KY_VERSIONS="1.7.5 1.8.0 1.14.0"
 ```
 
 ### Modify the Test Request
@@ -149,8 +144,9 @@ After running `./test-node-versions.sh`, you'll see a summary table like:
 ```
 Node.js         | ky 1.7.5   | ky 1.8.0   | ky 1.14.0
 ----------------|------------|------------|------------
+v24.0.0         | PASSED     | PASSED     | PASSED
+v20.18.0        | PASSED     | PASSED     | PASSED
 v18.0.0         | PASSED     | HUNG       | HUNG
-v20.0.0         | PASSED     | PASSED     | PASSED
 v22.0.0         | PASSED     | HUNG       | HUNG
 ```
 
@@ -161,6 +157,26 @@ Legend:
 - ? **Yellow ERROR**: Combination could not be tested
 
 ## Troubleshooting
+
+### timeout command not found
+
+The script requires the `timeout` command to detect hanging processes.
+
+**macOS users**:
+```bash
+brew install coreutils
+```
+
+This installs `gtimeout` which the script will automatically detect and use.
+
+**Linux users**:
+```bash
+# Debian/Ubuntu
+sudo apt-get install coreutils
+
+# RHEL/CentOS/Fedora
+sudo yum install coreutils
+```
 
 ### Node version manager not found
 
@@ -189,12 +205,6 @@ Make the script executable:
 chmod +x test-node-versions.sh
 ```
 
-### Timeout not working
-
-The script uses the `timeout` command, which should be available on macOS and Linux. If not available, install it:
-
-- macOS: `brew install coreutils` (provides `gtimeout`, update script to use `gtimeout`)
-- Linux: Usually pre-installed
 
 ## Contributing
 

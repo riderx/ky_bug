@@ -16,7 +16,8 @@ NC='\033[0m' # No Color
 TIMEOUT=30
 
 # Node.js versions to test (bug is specific to Node 18 and 22)
-NODE_VERSIONS="18.0.0 18.12.0 18.19.0 18.20.0 20.0.0 20.10.0 20.18.0 22.0.0 22.5.0 22.11.0"
+# Start with known good versions (24, 20) then test problematic ones (18, 22)
+NODE_VERSIONS="24.0.0 20.18.0 20.10.0 20.0.0 18.20.0 18.19.0 18.12.0 18.0.0 22.11.0 22.5.0 22.0.0"
 
 # Ky versions to test
 KY_VERSIONS="1.7.5 1.8.0 1.14.0"
@@ -47,6 +48,26 @@ else
 fi
 
 echo ""
+
+# Detect timeout command (required for this test)
+TIMEOUT_CMD=""
+if command -v timeout > /dev/null 2>&1; then
+    TIMEOUT_CMD="timeout"
+elif command -v gtimeout > /dev/null 2>&1; then
+    TIMEOUT_CMD="gtimeout"
+else
+    printf "${RED}Error: 'timeout' command not found.${NC}\n"
+    echo ""
+    echo "This script requires the 'timeout' command to detect hanging processes."
+    echo ""
+    echo "Install it with:"
+    echo "  macOS: brew install coreutils"
+    echo "  Linux: Usually pre-installed (part of coreutils)"
+    echo ""
+    exit 1
+fi
+
+echo "Using timeout command: $TIMEOUT_CMD"
 
 # Functions for version management
 install_node_version() {
@@ -109,14 +130,14 @@ for node_version in $NODE_VERSIONS; do
         # Run the test with timeout
         echo "    Running test (timeout: ${TIMEOUT}s)..."
 
-        if timeout "${TIMEOUT}s" node index.js > /tmp/node-test-output.log 2>&1; then
+        if $TIMEOUT_CMD "${TIMEOUT}s" node index.js > /tmp/node-test-output.log 2>&1; then
             # Script completed successfully
             printf "${GREEN}    ✓ PASSED - Script completed successfully${NC}\n"
             echo "${node_version}|${ky_version}|PASSED" >> "$RESULTS_FILE"
         else
             EXIT_CODE=$?
-            if [ $EXIT_CODE -eq 124 ]; then
-                # Timeout occurred - script hung
+            if [ $EXIT_CODE -eq 124 ] || [ $EXIT_CODE -eq 143 ]; then
+                # Timeout occurred - script hung (124 for timeout, 143 for gtimeout)
                 printf "${RED}    ✗ HUNG - Script exceeded ${TIMEOUT}s timeout${NC}\n"
                 echo "${node_version}|${ky_version}|HUNG" >> "$RESULTS_FILE"
             else
