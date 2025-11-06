@@ -27,6 +27,8 @@ try {
   console.log('Response:', response)
   process.exit(0)
 } catch (error) {
+// Ensure we read response to ensure no memory leaks
+  error.response?.arrayBuffer();
   console.log('=== CATCH BLOCK REACHED ===')
   console.log('Error type:', error.constructor.name)
   console.log('Error message:', error.message)
